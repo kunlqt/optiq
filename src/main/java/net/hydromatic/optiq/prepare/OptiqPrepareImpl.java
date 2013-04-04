@@ -42,6 +42,7 @@ import org.eigenbase.sql.type.*;
 import org.eigenbase.sql.util.ChainedSqlOperatorTable;
 import org.eigenbase.sql.validate.*;
 import org.eigenbase.sql2rel.SqlToRelConverter;
+import org.eigenbase.util.Bug;
 import org.eigenbase.util.Pair;
 
 import org.codehaus.janino.*;
@@ -102,6 +103,10 @@ public class OptiqPrepareImpl implements OptiqPrepare {
     protected VolcanoPlanner createPlanner() {
         final VolcanoPlanner planner = new VolcanoPlanner();
         planner.addRelTraitDef(ConventionTraitDef.instance);
+        if (Bug.TodoFixed)
+        planner.addRelTraitDef(RelCollationTraitDef.INSTANCE);
+        if (Bug.TodoFixed)
+        planner.registerAbstractRelationalRules();
         RelOptUtil.registerAbstractRels(planner);
         planner.addRule(JavaRules.ENUMERABLE_JOIN_RULE);
         planner.addRule(JavaRules.ENUMERABLE_CALC_RULE);
@@ -309,8 +314,10 @@ public class OptiqPrepareImpl implements OptiqPrepare {
             init(runtimeContextClass);
 
             final RelOptQuery query = new RelOptQuery(planner);
+            final RelTraitSet emptyTraitSet = RelTraitSet.createEmpty();
             final RelOptCluster cluster =
-                query.createCluster(rexBuilder.getTypeFactory(), rexBuilder);
+                query.createCluster(
+                    rexBuilder.getTypeFactory(), rexBuilder, emptyTraitSet);
 
             RelNode rootRel =
                 new LixToRelTranslator(cluster)

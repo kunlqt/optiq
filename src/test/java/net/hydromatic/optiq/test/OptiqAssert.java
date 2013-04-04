@@ -351,6 +351,19 @@ public class OptiqAssert {
                 hook.close();
             }
         }
+
+        public AssertQuery explainContains(String expected) {
+            String explainSql = "explain plan for " + sql;
+            try {
+                assertQuery(
+                    createConnection(), explainSql, checkResult(expected),
+                    null);
+                return this;
+            } catch (Exception e) {
+                throw new RuntimeException(
+                    "exception while executing [" + explainSql + "]", e);
+            }
+        }
     }
 
     public enum Config {

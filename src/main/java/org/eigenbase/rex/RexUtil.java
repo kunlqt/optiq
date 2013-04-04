@@ -892,6 +892,24 @@ public class RexUtil
     }
 
     /**
+     * Applies a mapping to a collation.
+     *
+     * @param mapping Mapping
+     * @param collation Collation
+     * @return collation with mapping applied
+     */
+    public static RelCollation apply(
+        Mappings.TargetMapping mapping,
+        RelCollation collation)
+    {
+        List<RelFieldCollation> fieldCollations =
+            applyFields(mapping, collation.getFieldCollations());
+        return fieldCollations.equals(collation.getFieldCollations())
+            ? collation
+            : new RelCollationImpl(fieldCollations);
+    }
+
+    /**
      * Applies a mapping to a field collation.
      *
      * <p>If the field is not mapped, returns null.
@@ -919,8 +937,8 @@ public class RexUtil
      * @param fieldCollations Field collations
      * @return collations with mapping applied
      */
-    public static List<RelFieldCollation> apply(
-        Mapping mapping,
+    public static List<RelFieldCollation> applyFields(
+        Mappings.TargetMapping mapping,
         List<RelFieldCollation> fieldCollations)
     {
         final List<RelFieldCollation> newFieldCollations =
@@ -985,8 +1003,8 @@ public class RexUtil
         List<? extends RexNode> exprs,
         RexNode expr)
     {
-        for (int i = 0; i < exprs.size(); i++) {
-            exprs.get(i).accept(visitor);
+        for (RexNode e : exprs) {
+            e.accept(visitor);
         }
         if (expr != null) {
             expr.accept(visitor);

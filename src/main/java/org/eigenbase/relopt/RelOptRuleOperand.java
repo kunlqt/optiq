@@ -49,7 +49,12 @@ public class RelOptRuleOperand
         /**
          * Signifies that operand can have any number of children.
          */
-        ANY
+        ANY,
+
+        /**
+         * Signifies that operand must have no children.
+         */
+        NONE
     }
 
     //~ Instance fields --------------------------------------------------------
@@ -171,6 +176,13 @@ public class RelOptRuleOperand
     /**
      * Creates an operand that matches any number of children.
      *
+     * <p>Example:</p>
+     * <li><code>RelOptRuleOperand(X.class, ANY)</code> is equivalent to
+     *     <code>RelOptRuleOperand(X.class, null)</code></li>
+     * <li><code>RelOptRuleOperand(X.class, NONE)</code> is equivalent to
+     *     <code>RelOptRuleOperand(X.class, new RelOptRuleOperand[0])</code>
+     * </li>
+     *
      * @param clazz Class of relational expression to match (must not be null)
      * @param dummy Dummy argument to distinguish this constructor from other
      * overloaded forms
@@ -179,8 +191,10 @@ public class RelOptRuleOperand
         Class<? extends RelNode> clazz,
         Dummy dummy)
     {
-        this(clazz, null, false, (RelOptRuleOperand []) null);
-        Util.discard(dummy);
+        this(
+            clazz, null, false,
+            dummy == Dummy.ANY ? null : new RelOptRuleOperand[0]);
+        assert dummy != null;
     }
 
     //~ Methods ----------------------------------------------------------------

@@ -523,7 +523,7 @@ public class JavaRules {
                 return sortRel.copy(
                     newTraitSet,
                     convert(sortRel.getChild(), newTraitSet),
-                    sortRel.getCollations());
+                    sortRel.getCollation());
             }
             return rel.copy(newTraitSet, rel.getInputs());
         }
@@ -1153,7 +1153,7 @@ public class JavaRules {
                 rel.getCluster(),
                 traitSet,
                 convert(sort.getChild(), traitSet),
-                sort.getCollations());
+                sort.getCollation());
         }
     }
 
@@ -1167,9 +1167,9 @@ public class JavaRules {
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode child,
-            List<RelFieldCollation> collations)
+            RelCollation collation)
         {
-            super(cluster, traitSet, child, collations);
+            super(cluster, traitSet, child, collation);
             assert getConvention() instanceof EnumerableConvention;
             assert getConvention() == child.getConvention();
             this.physType =
@@ -1183,13 +1183,12 @@ public class JavaRules {
         public EnumerableSortRel copy(
             RelTraitSet traitSet,
             RelNode newInput,
-            List<RelFieldCollation> newCollations)
+            RelCollation newCollation)
         {
             return new EnumerableSortRel(
                 getCluster(),
                 traitSet,
-                newInput,
-                newCollations);
+                newInput, newCollation);
         }
 
         public PhysType getPhysType() {
@@ -1208,7 +1207,7 @@ public class JavaRules {
             PhysType inputPhysType = child.getPhysType();
             final Pair<Expression, Expression> pair =
                 inputPhysType.generateCollationKey(
-                    collations);
+                    collation.getFieldCollations());
 
             final Expression keySelector =
                 statements.append(

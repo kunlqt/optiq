@@ -154,7 +154,9 @@ public class SqlToRelConverter
         this.rexBuilder = rexBuilder;
         this.typeFactory = rexBuilder.getTypeFactory();
         RelOptQuery query = new RelOptQuery(planner);
-        this.cluster = query.createCluster(typeFactory, rexBuilder);
+        final RelTraitSet emptyTraitSet = planner.emptyTraitSet();
+        this.cluster =
+            query.createCluster(typeFactory, rexBuilder, emptyTraitSet);
         this.shouldConvertTableAccess = true;
         this.exprConverter =
             new SqlNodeToRexConverterImpl(new StandardConvertletTable());
@@ -536,6 +538,7 @@ public class SqlToRelConverter
             select.getOrderList(),
             orderExprList,
             collationList);
+        final RelCollationImpl collation = new RelCollationImpl(collationList);
 
         if (validator.isAggregate(select)) {
             convertAgg(
@@ -552,7 +555,7 @@ public class SqlToRelConverter
         if (select.isDistinct()) {
             distinctify(bb, true);
         }
-        convertOrder(select, bb, collationList, orderExprList);
+        convertOrder(select, bb, collation, orderExprList);
         bb.setRoot(bb.root, true);
     }
 
@@ -683,18 +686,18 @@ public class SqlToRelConverter
      *
      * @param select Query
      * @param bb Blackboard
-     * @param collationList Collation list
+     * @param collation Collation list
      * @param orderExprList Method populates this list with orderBy expressions
      *   not present in selectList
      */
     protected void convertOrder(
         SqlSelect select,
         Blackboard bb,
-        List<RelFieldCollation> collationList,
+        RelCollation collation,
         List<SqlNode> orderExprList)
     {
         if (select.getOrderList() == null) {
-            assert collationList.isEmpty();
+            assert collation.getFieldCollations().isEmpty();
             return;
         }
 
@@ -704,7 +707,7 @@ public class SqlToRelConverter
                 cluster,
                 cluster.traitSetOf(Convention.NONE),
                 bb.root,
-                collationList),
+                collation),
             false);
 
         // If extra expressions were added to the project list for sorting,

@@ -49,6 +49,11 @@ public class RelCollationTraitDef extends RelTraitDef<RelCollation>
         return "sort";
     }
 
+    @Override
+    public boolean multiple() {
+        return true;
+    }
+
     public RelNode convert(
         RelOptPlanner planner,
         RelNode rel,

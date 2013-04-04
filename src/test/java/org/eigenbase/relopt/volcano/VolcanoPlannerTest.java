@@ -21,7 +21,6 @@ import java.util.*;
 
 import junit.framework.*;
 
-import net.hydromatic.optiq.rules.java.EnumerableConvention;
 import org.eigenbase.rel.*;
 import org.eigenbase.rel.convert.*;
 import org.eigenbase.rel.rules.*;
@@ -30,6 +29,8 @@ import org.eigenbase.reltype.*;
 import org.eigenbase.rex.*;
 import org.eigenbase.sql.type.*;
 import org.eigenbase.util.*;
+
+import net.hydromatic.optiq.rules.java.EnumerableConvention;
 
 
 /**
@@ -67,7 +68,8 @@ public class VolcanoPlannerTest
         RelDataTypeFactory typeFactory = new SqlTypeFactoryImpl();
         return query.createCluster(
             typeFactory,
-            new RexBuilder(typeFactory));
+            new RexBuilder(typeFactory),
+            RelTraitSet.createEmpty());
     }
 
     /**
