@@ -1078,8 +1078,7 @@ public class JavaRules {
    * Rule to convert an {@link org.eigenbase.rel.SortRel} to an
    * {@link net.hydromatic.optiq.rules.java.JavaRules.EnumerableSortRel}.
    */
-  private static class EnumerableSortRule
-      extends ConverterRule {
+  private static class EnumerableSortRule extends ConverterRule {
     private EnumerableSortRule() {
       super(
           SortRel.class,

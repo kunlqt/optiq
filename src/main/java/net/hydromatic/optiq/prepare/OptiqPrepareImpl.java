@@ -19,7 +19,6 @@ package net.hydromatic.optiq.prepare;
 
 import net.hydromatic.linq4j.*;
 import net.hydromatic.linq4j.expressions.*;
-import net.hydromatic.linq4j.function.Function0;
 
 import net.hydromatic.optiq.*;
 import net.hydromatic.optiq.impl.java.JavaTypeFactory;
@@ -62,18 +61,23 @@ import java.util.*;
  * subject to change without notice.</p>
  */
 public class OptiqPrepareImpl implements OptiqPrepare {
-
   public static final boolean DEBUG =
       "true".equals(System.getProperties().getProperty("optiq.debug"));
 
-  public ParseResult parse(
-      Context context, String sql) {
+  public ParseResult parse(Context context, String sql) {
     final JavaTypeFactory typeFactory = context.getTypeFactory();
     OptiqCatalogReader catalogReader =
         new OptiqCatalogReader(
             context.getRootSchema(),
             context.getDefaultSchemaPath(),
             typeFactory);
+    final OptiqPreparingStmt preparingStmt =
+        new OptiqPreparingStmt(
+            catalogReader,
+            typeFactory,
+            context.getRootSchema(),
+            EnumerableConvention.ARRAY,
+            createPlanner());
     SqlParser parser = new SqlParser(sql);
     SqlNode sqlNode;
     try {
@@ -89,31 +93,9 @@ public class OptiqPrepareImpl implements OptiqPrepare {
         sql, sqlNode1, validator.getValidatedNodeType(sqlNode1));
   }
 
-  /** Creates a collection of planner factories.
-   *
-   * <p>The collection must have at least one factory, and each factory must
-   * create a planner. If the collection has more than one planner, Optiq will
-   * try each planner in turn.</p>
-   *
-   * <p>One of the things you can do with this mechanism is to try a simpler,
-   * faster, planner with a smaller rule set first, then fall back to a more
-   * complex planner for complex and costly queries.</p>
-   *
-   * <p>The default implementation returns a factory that calls
-   * {@link #createPlanner()}.</p> */
-  protected List<Function0<RelOptPlanner>> createPlannerFactories() {
-    return Collections.<Function0<RelOptPlanner>>singletonList(
-        new Function0<RelOptPlanner>() {
-          public RelOptPlanner apply() {
-            return createPlanner();
-          }
-        }
-    );
-  }
-
   /** Creates a query planner and initializes it with a default set of
    * rules. */
-  protected RelOptPlanner createPlanner() {
+  protected VolcanoPlanner createPlanner() {
     final VolcanoPlanner planner = new VolcanoPlanner();
     planner.addRelTraitDef(ConventionTraitDef.instance);
     if (Bug.TodoFixed)
@@ -131,14 +113,13 @@ public class OptiqPrepareImpl implements OptiqPrepare {
     planner.addRule(JavaRules.ENUMERABLE_TABLE_MODIFICATION_RULE);
     planner.addRule(JavaRules.ENUMERABLE_VALUES_RULE);
     planner.addRule(JavaRules.ENUMERABLE_ONE_ROW_RULE);
-    planner.addRule(JavaRules.ENUMERABLE_CUSTOM_FROM_ARRAY_RULE);
     planner.addRule(JavaRules.ENUMERABLE_ARRAY_FROM_CUSTOM_RULE);
+    planner.addRule(JavaRules.ENUMERABLE_CUSTOM_FROM_ARRAY_RULE);
     planner.addRule(JavaRules.EnumerableCustomCalcRule.INSTANCE);
     planner.addRule(TableAccessRule.instance);
     planner.addRule(PushFilterPastProjectRule.instance);
     planner.addRule(PushFilterPastJoinRule.instance);
     planner.addRule(RemoveDistinctAggregateRule.instance);
-    planner.addRule(ReduceAggregatesRule.instance);
     planner.addRule(SwapJoinRule.instance);
     return planner;
   }
@@ -171,37 +152,6 @@ public class OptiqPrepareImpl implements OptiqPrepare {
             context.getRootSchema(),
             context.getDefaultSchemaPath(),
             typeFactory);
-    final List<Function0<RelOptPlanner>> plannerFactories =
-        createPlannerFactories();
-    if (plannerFactories.isEmpty()) {
-      throw new AssertionError("no planner factories");
-    }
-    RuntimeException exception = new RuntimeException();
-    for (Function0<RelOptPlanner> plannerFactory : plannerFactories) {
-      final RelOptPlanner planner = plannerFactory.apply();
-      if (planner == null) {
-        throw new AssertionError("factory returned null planner");
-      }
-      try {
-        return prepare2_(
-            context, sql, queryable, elementType, maxRowCount,
-            catalogReader, planner);
-      } catch (RelOptPlanner.CannotPlanException e) {
-        exception = e;
-      }
-    }
-    throw exception;
-  }
-
-  <T> PrepareResult<T> prepare2_(
-      Context context,
-      String sql,
-      Queryable<T> queryable,
-      Type elementType,
-      int maxRowCount,
-      OptiqCatalogReader catalogReader,
-      RelOptPlanner planner) {
-    final JavaTypeFactory typeFactory = context.getTypeFactory();
     final EnumerableConvention convention;
     if (elementType == Object[].class) {
       convention = EnumerableConvention.ARRAY;
@@ -214,7 +164,7 @@ public class OptiqPrepareImpl implements OptiqPrepare {
             typeFactory,
             context.getRootSchema(),
             convention,
-            planner);
+            createPlanner());
 
     final RelDataType x;
     final Prepare.PreparedResult preparedResult;
@@ -355,7 +305,6 @@ public class OptiqPrepareImpl implements OptiqPrepare {
       queryString = null;
       Class runtimeContextClass = Object.class;
       init(runtimeContextClass);
-
       final RelOptQuery query = new RelOptQuery(planner);
       final RelTraitSet emptyTraitSet = RelTraitSet.createEmpty();
       final RelOptCluster cluster =
@@ -516,7 +465,7 @@ public class OptiqPrepareImpl implements OptiqPrepare {
       } catch (Exception e) {
         throw Helper.INSTANCE.wrap(
             "Error while compiling generated Java code:\n"
-                + s,
+            + s,
             e);
       }
 
@@ -859,7 +808,7 @@ public class OptiqPrepareImpl implements OptiqPrepare {
       default:
         throw new UnsupportedOperationException(
             "unknown expression type " + expression.getNodeType() + " "
-                + expression);
+            + expression);
       }
     }
 
