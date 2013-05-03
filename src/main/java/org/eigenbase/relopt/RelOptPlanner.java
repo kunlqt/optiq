@@ -126,6 +126,8 @@ public interface RelOptPlanner
 
     /**
      * Finds the most efficient expression to implement this query.
+     *
+     * @throws CannotPlanException if cannot find a plan
      */
     public RelNode findBestExp();
 
@@ -275,6 +277,13 @@ public interface RelOptPlanner
      * @return Empty trait set
      */
     RelTraitSet emptyTraitSet();
+
+    /** Thrown by {@link org.eigenbase.relopt.RelOptPlanner#findBestExp()}. */
+    class CannotPlanException extends RuntimeException {
+        public CannotPlanException(String message) {
+            super(message);
+        }
+    }
 }
 
 // End RelOptPlanner.java
