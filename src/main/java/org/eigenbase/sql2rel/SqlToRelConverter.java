@@ -480,13 +480,10 @@ public class SqlToRelConverter
     protected RelDataType uniquifyFields(RelDataType rowType)
     {
         final List<String> fieldNameList =
-            new ArrayList<String>(
-                RelOptUtil.getFieldNameList(rowType));
-        final List<RelDataType> fieldTypeList =
-            RelOptUtil.getFieldTypeList(rowType);
+            new ArrayList<String>(rowType.getFieldNames());
         SqlValidatorUtil.uniquify(fieldNameList);
         return validator.getTypeFactory().createStructType(
-            fieldTypeList,
+            RelOptUtil.getFieldTypeList(rowType),
             fieldNameList);
     }
 
@@ -2436,8 +2433,7 @@ public class SqlToRelConverter
             final SqlValidatorNamespace selectNamespace =
                 validator.getNamespace(selectScope.getNode());
             final List<String> names =
-                RelOptUtil.getFieldNameList(
-                    selectNamespace.getRowType());
+                selectNamespace.getRowType().getFieldNames();
             int sysFieldCount = selectList.size() - names.size();
             for (SqlNode expr : selectList) {
                 selectExprs.add(bb.convertExpression(expr));
@@ -2936,8 +2932,7 @@ public class SqlToRelConverter
         final RelDataType targetRowType = targetTable.getRowType();
         SqlNodeList targetColumnList = call.getTargetColumnList();
         if (targetColumnList == null) {
-            targetColumnNames.addAll(
-                RelOptUtil.getFieldNameList(targetRowType));
+            targetColumnNames.addAll(targetRowType.getFieldNames());
         } else {
             for (int i = 0; i < targetColumnList.size(); i++) {
                 SqlIdentifier id = (SqlIdentifier) targetColumnList.get(i);
