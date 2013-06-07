@@ -21,6 +21,8 @@ import java.util.*;
 
 import junit.framework.*;
 
+import net.hydromatic.optiq.rules.java.EnumerableConvention;
+
 import org.eigenbase.rel.*;
 import org.eigenbase.rel.convert.*;
 import org.eigenbase.rel.rules.*;
@@ -30,15 +32,9 @@ import org.eigenbase.rex.*;
 import org.eigenbase.sql.type.*;
 import org.eigenbase.util.*;
 
-import net.hydromatic.optiq.rules.java.EnumerableConvention;
-
 
 /**
- * A <code>VolcanoPlannerTest</code> is a unit-test for {@link VolcanoPlanner
- * the optimizer}.
- *
- * @author John V. Sichi
- * @since Mar 19, 2003
+ * Unit test for {@link VolcanoPlanner the optimizer}.
  */
 public class VolcanoPlannerTest
     extends TestCase
@@ -615,7 +611,7 @@ public class VolcanoPlannerTest
     {
         PhysLeafRule()
         {
-            super(new RelOptRuleOperand(NoneLeafRel.class, ANY));
+            super(any(NoneLeafRel.class));
         }
 
         // implement RelOptRule
@@ -627,7 +623,7 @@ public class VolcanoPlannerTest
         // implement RelOptRule
         public void onMatch(RelOptRuleCall call)
         {
-            NoneLeafRel leafRel = (NoneLeafRel) call.rels[0];
+            NoneLeafRel leafRel = call.rel(0);
             call.transformTo(
                 new PhysLeafRel(
                     leafRel.getCluster(),
@@ -640,13 +636,10 @@ public class VolcanoPlannerTest
     {
         GoodSingleRule()
         {
-            super(
-                new RelOptRuleOperand(
-                    NoneSingleRel.class,
-                    ANY));
+            super(any(NoneSingleRel.class));
         }
 
-        // implement RelOptRule
+      // implement RelOptRule
         public Convention getOutConvention()
         {
             return PHYS_CALLING_CONVENTION;
@@ -655,7 +648,7 @@ public class VolcanoPlannerTest
         // implement RelOptRule
         public void onMatch(RelOptRuleCall call)
         {
-            NoneSingleRel singleRel = (NoneSingleRel) call.rels[0];
+            NoneSingleRel singleRel = call.rel(0);
             RelNode childRel = singleRel.getChild();
             RelNode physInput =
                 convert(
@@ -680,9 +673,8 @@ public class VolcanoPlannerTest
         ReformedSingleRule()
         {
             super(
-                new RelOptRuleOperand(
-                    NoneSingleRel.class,
-                    new RelOptRuleOperand(PhysLeafRel.class, ANY)));
+                some(
+                    NoneSingleRel.class, any(PhysLeafRel.class)));
         }
 
         // implement RelOptRule
@@ -694,8 +686,8 @@ public class VolcanoPlannerTest
         // implement RelOptRule
         public void onMatch(RelOptRuleCall call)
         {
-            NoneSingleRel singleRel = (NoneSingleRel) call.rels[0];
-            RelNode childRel = call.rels[1];
+            NoneSingleRel singleRel = call.rel(0);
+            RelNode childRel = call.rel(1);
             RelNode physInput =
                 convert(
                     childRel,
@@ -712,10 +704,7 @@ public class VolcanoPlannerTest
     {
         PhysProjectRule()
         {
-            super(
-                new RelOptRuleOperand(
-                    ProjectRel.class,
-                    ANY));
+            super(any(ProjectRel.class));
         }
 
         // implement RelOptRule
@@ -727,7 +716,8 @@ public class VolcanoPlannerTest
         // implement RelOptRule
         public void onMatch(RelOptRuleCall call)
         {
-            RelNode childRel = ((ProjectRel) call.rels[0]).getChild();
+            final ProjectRel project = call.rel(0);
+            RelNode childRel = project.getChild();
             call.transformTo(
                 new PhysLeafRel(
                     childRel.getCluster(),
@@ -741,9 +731,8 @@ public class VolcanoPlannerTest
         GoodRemoveSingleRule()
         {
             super(
-                new RelOptRuleOperand(
-                    PhysSingleRel.class,
-                    new RelOptRuleOperand(PhysLeafRel.class, ANY)));
+                some(
+                    PhysSingleRel.class, any(PhysLeafRel.class)));
         }
 
         // implement RelOptRule
@@ -755,8 +744,8 @@ public class VolcanoPlannerTest
         // implement RelOptRule
         public void onMatch(RelOptRuleCall call)
         {
-            PhysSingleRel singleRel = (PhysSingleRel) call.rels[0];
-            PhysLeafRel leafRel = (PhysLeafRel) call.rels[1];
+            PhysSingleRel singleRel = call.rel(0);
+            PhysLeafRel leafRel = call.rel(1);
             call.transformTo(
                 new PhysLeafRel(
                     singleRel.getCluster(),
@@ -770,9 +759,8 @@ public class VolcanoPlannerTest
         ReformedRemoveSingleRule()
         {
             super(
-                new RelOptRuleOperand(
-                    NoneSingleRel.class,
-                    new RelOptRuleOperand(PhysLeafRel.class, ANY)));
+                some(
+                    NoneSingleRel.class, any(PhysLeafRel.class)));
         }
 
         // implement RelOptRule
@@ -784,8 +772,8 @@ public class VolcanoPlannerTest
         // implement RelOptRule
         public void onMatch(RelOptRuleCall call)
         {
-            NoneSingleRel singleRel = (NoneSingleRel) call.rels[0];
-            PhysLeafRel leafRel = (PhysLeafRel) call.rels[1];
+            NoneSingleRel singleRel = call.rel(0);
+            PhysLeafRel leafRel = call.rel(1);
             call.transformTo(
                 new PhysLeafRel(
                     singleRel.getCluster(),
