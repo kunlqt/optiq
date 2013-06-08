@@ -58,6 +58,106 @@ public class OptiqAssert {
     UTC_TIMESTAMP_FORMAT.setTimeZone(utc);
   }
 
+  /** Implementation of {@link AssertThat} that does nothing. */
+  private static final AssertThat DISABLED =
+      new AssertThat((Config) null) {
+        @Override
+        public AssertThat with(Config config) {
+          return this;
+        }
+
+        @Override
+        public AssertThat with(ConnectionFactory connectionFactory) {
+          return this;
+        }
+
+        @Override
+        public AssertThat with(String name, Object schema) {
+          return this;
+        }
+
+        @Override
+        public AssertThat withModel(String model) {
+          return this;
+        }
+
+        @Override
+        public AssertQuery query(String sql) {
+          return ASD(sql);
+        }
+
+        @Override
+        public void connectThrows(String message) {
+          // nothing
+        }
+
+        @Override
+        public void connectThrows(Function1<Throwable, Void> exceptionChecker) {
+          // nothing
+        }
+
+        @Override
+        public <T> AssertThat doWithConnection(Function1<OptiqConnection, T> fn)
+            throws Exception {
+          return this;
+        }
+
+        @Override
+        public AssertThat withSchema(String schema) {
+          return this;
+        }
+
+        @Override
+        public AssertThat enable(boolean enabled) {
+          return this;
+        }
+      };
+
+  /** Returns an implementation of {@link AssertQuery} that does nothing. */
+  private static AssertQuery ASD(final String sql) {
+    return new AssertQuery(null, sql) {
+      @Override
+      protected Connection createConnection() throws Exception {
+        throw new AssertionError("disabled");
+      }
+
+      @Override
+      public AssertQuery returns(String expected) {
+        return this;
+      }
+
+      @Override
+      public AssertQuery returns(Function1<String, Void> checker) {
+        return this;
+      }
+
+      @Override
+      public AssertQuery throws_(String message) {
+        return this;
+      }
+
+      @Override
+      public AssertQuery runs() {
+        return this;
+      }
+
+      @Override
+      public AssertQuery explainContains(String expected) {
+        return this;
+      }
+
+      @Override
+      public AssertQuery planContains(String expected) {
+        return this;
+      }
+
+      @Override
+      public AssertQuery planHasSql(String expected) {
+        return this;
+      }
+    };
+  }
+
   public static AssertThat assertThat() {
     return new AssertThat(Config.REGULAR);
   }
@@ -124,10 +224,12 @@ public class OptiqAssert {
   static void assertQuery(
       Connection connection,
       String sql,
+      int limit,
       Function1<String, Void> resultChecker,
       Function1<Throwable, Void> exceptionChecker)
       throws Exception {
     Statement statement = connection.createStatement();
+    statement.setMaxRows(limit <= 0 ? limit : Math.max(limit, 1));
     ResultSet resultSet;
     try {
       resultSet = statement.executeQuery(sql);
@@ -277,11 +379,13 @@ public class OptiqAssert {
     }
 
     /** Creates a connection and executes a callback. */
-    public <T> T doWithConnection(Function1<OptiqConnection, T> fn)
+    public <T> AssertThat doWithConnection(Function1<OptiqConnection, T> fn)
         throws Exception {
       Connection connection = connectionFactory.createConnection();
       try {
-        return fn.apply((OptiqConnection) connection);
+        T t = fn.apply((OptiqConnection) connection);
+        Util.discard(t);
+        return AssertThat.this;
       } finally {
         connection.close();
       }
@@ -290,6 +394,10 @@ public class OptiqAssert {
     public AssertThat withSchema(String schema) {
       return new AssertThat(
           new SchemaConnectionFactory(connectionFactory, schema));
+    }
+
+    public AssertThat enable(boolean enabled) {
+      return enabled ? this : DISABLED;
     }
   }
 
@@ -357,6 +465,7 @@ public class OptiqAssert {
     private final String sql;
     private ConnectionFactory connectionFactory;
     private String plan;
+    private int limit;
 
     private AssertQuery(ConnectionFactory connectionFactory, String sql) {
       this.sql = sql;
@@ -373,8 +482,7 @@ public class OptiqAssert {
 
     public AssertQuery returns(Function1<String, Void> checker) {
       try {
-        assertQuery(
-            createConnection(), sql, checker, null);
+        assertQuery(createConnection(), sql, limit, checker, null);
         return this;
       } catch (Exception e) {
         throw new RuntimeException(
@@ -384,8 +492,8 @@ public class OptiqAssert {
 
     public AssertQuery throws_(String message) {
       try {
-        assertQuery(
-            createConnection(), sql, null, checkException(message));
+        assertQuery(createConnection(), sql, limit, null,
+            checkException(message));
         return this;
       } catch (Exception e) {
         throw new RuntimeException(
@@ -395,7 +503,7 @@ public class OptiqAssert {
 
     public AssertQuery runs() {
       try {
-        assertQuery(createConnection(), sql, null, null);
+        assertQuery(createConnection(), sql, limit, null, null);
         return this;
       } catch (Exception e) {
         throw new RuntimeException(
@@ -407,8 +515,8 @@ public class OptiqAssert {
       String explainSql = "explain plan for " + sql;
       try {
         assertQuery(
-            createConnection(), explainSql, checkResultContains(expected),
-            null);
+            createConnection(), explainSql, limit,
+            checkResultContains(expected), null);
         return this;
       } catch (Exception e) {
         throw new RuntimeException(
@@ -442,7 +550,7 @@ public class OptiqAssert {
             }
           });
       try {
-        assertQuery(createConnection(), sql, null, null);
+        assertQuery(createConnection(), sql, limit, null, null);
         Assert.assertNotNull(plan);
       } catch (Exception e) {
         throw new RuntimeException(
@@ -450,6 +558,12 @@ public class OptiqAssert {
       } finally {
         hook.close();
       }
+    }
+
+    /** Sets a limit on the number of rows returned. -1 means no limit. */
+    public AssertQuery limit(int limit) {
+      this.limit = limit;
+      return this;
     }
   }
 
