@@ -38,12 +38,6 @@ public abstract class RelOptRule
     public static final RelOptRuleOperand.Dummy ANY =
         RelOptRuleOperand.Dummy.ANY;
 
-    /**
-     * Shorthand for {@link RelOptRuleOperand.Dummy#NONE}.
-     */
-    public static final RelOptRuleOperand.Dummy NONE =
-        RelOptRuleOperand.Dummy.NONE;
-
     //~ Instance fields --------------------------------------------------------
 
     /**
