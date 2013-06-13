@@ -19,10 +19,6 @@ package org.eigenbase.relopt.volcano;
 
 import java.util.*;
 
-import junit.framework.*;
-
-import net.hydromatic.optiq.rules.java.EnumerableConvention;
-
 import org.eigenbase.rel.*;
 import org.eigenbase.rel.convert.*;
 import org.eigenbase.rel.rules.*;
@@ -32,13 +28,18 @@ import org.eigenbase.rex.*;
 import org.eigenbase.sql.type.*;
 import org.eigenbase.util.*;
 
+import net.hydromatic.optiq.rules.java.EnumerableConvention;
+
+import org.junit.Ignore;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
 
 /**
  * Unit test for {@link VolcanoPlanner the optimizer}.
  */
-public class VolcanoPlannerTest
-    extends TestCase
-{
+public class VolcanoPlannerTest {
     //~ Static fields/initializers ---------------------------------------------
 
     /**
@@ -51,9 +52,7 @@ public class VolcanoPlannerTest
 
     //~ Constructors -----------------------------------------------------------
 
-    public VolcanoPlannerTest(String name)
-    {
-        super(name);
+    public VolcanoPlannerTest() {
     }
 
     //~ Methods ----------------------------------------------------------------
@@ -71,8 +70,7 @@ public class VolcanoPlannerTest
     /**
      * Tests transformation of a leaf from NONE to PHYS.
      */
-    public void testTransformLeaf()
-    {
+    @Test public void testTransformLeaf() {
         VolcanoPlanner planner = new VolcanoPlanner();
 
         planner.addRelTraitDef(ConventionTraitDef.instance);
@@ -96,8 +94,7 @@ public class VolcanoPlannerTest
     /**
      * Tests transformation of a single+leaf from NONE to PHYS.
      */
-    public void testTransformSingleGood()
-    {
+    @Test public void testTransformSingleGood() {
         VolcanoPlanner planner = new VolcanoPlanner();
         planner.addRelTraitDef(ConventionTraitDef.instance);
 
@@ -126,8 +123,7 @@ public class VolcanoPlannerTest
      * Tests transformation of a single+leaf from NONE to PHYS. In the past,
      * this one didn't work due to the definition of ReformedSingleRule.
      */
-    public void testTransformSingleReformed()
-    {
+    @Test public void testTransformSingleReformed() {
         VolcanoPlanner planner = new VolcanoPlanner();
         planner.addRelTraitDef(ConventionTraitDef.instance);
 
@@ -210,15 +206,13 @@ public class VolcanoPlannerTest
     }
 
     // NOTE:  this used to fail but now works
-    public void testWithRemoveTrivialProject()
-    {
+    @Test public void testWithRemoveTrivialProject() {
         removeTrivialProject(true);
     }
 
     // NOTE:  this always worked; it's here as constrast to
     // testWithRemoveTrivialProject()
-    public void testWithoutRemoveTrivialProject()
-    {
+    @Test public void testWithoutRemoveTrivialProject() {
         removeTrivialProject(false);
     }
 
@@ -226,8 +220,7 @@ public class VolcanoPlannerTest
      * Previously, this didn't work because ReformedRemoveSingleRule uses a
      * pattern which spans calling conventions.
      */
-    public void testRemoveSingleReformed()
-    {
+    @Test public void testRemoveSingleReformed() {
         VolcanoPlanner planner = new VolcanoPlanner();
         planner.ambitious = true;
         planner.addRelTraitDef(ConventionTraitDef.instance);
@@ -262,8 +255,7 @@ public class VolcanoPlannerTest
      * uses a completely-physical pattern (requiring GoodSingleRule to fire
      * first).
      */
-    public void testRemoveSingleGood()
-    {
+    @Test public void testRemoveSingleGood() {
         VolcanoPlanner planner = new VolcanoPlanner();
         planner.ambitious = true;
         planner.addRelTraitDef(ConventionTraitDef.instance);
@@ -297,8 +289,8 @@ public class VolcanoPlannerTest
     /**
      * Tests whether planner correctly notifies listeners of events.
      */
-    public void testListener()
-    {
+    @Ignore
+    @Test public void testListener() {
         TestListener listener = new TestListener();
 
         VolcanoPlanner planner = new VolcanoPlanner();
