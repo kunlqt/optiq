@@ -201,8 +201,8 @@ public class JdbcFrontJdbcBackLinqMiddleTest {
         .planHasSql(
             "SELECT `state_province`, `S`, `DC`\n"
             + "FROM (SELECT `customer`.`state_province`, `customer`.`country`, SUM(`sales_fact_1997`.`unit_sales`) AS `S`, COUNT(DISTINCT `customer`.`customer_id`) AS `DC`\n"
-            + "FROM `foodmart`.`sales_fact_1997`\n"
-            + "INNER JOIN `foodmart`.`customer` ON `sales_fact_1997`.`customer_id` = `customer`.`customer_id`\n"
+            + "FROM `foodmart`.`customer`\n"
+            + "INNER JOIN `foodmart`.`sales_fact_1997` ON `customer`.`customer_id` = `sales_fact_1997`.`customer_id`\n"
             + "GROUP BY `customer`.`state_province`, `customer`.`country`) AS `t0`\n"
             + "ORDER BY `state_province`, `S`")
         .returns(

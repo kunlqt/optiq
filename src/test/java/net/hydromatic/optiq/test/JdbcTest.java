@@ -686,9 +686,9 @@ public class JdbcTest {
             + "where \"time_id\" < 370\n"
             + "order by \"time_id\"")
         .returns(
-            "time_id=367; the_date=1997-01-01 00:00:00.0\n"
-            + "time_id=368; the_date=1997-01-02 00:00:00.0\n"
-            + "time_id=369; the_date=1997-01-03 00:00:00.0\n")
+            "time_id=367; the_date=1997-01-01T08:00:00Z\n"
+            + "time_id=368; the_date=1997-01-02T08:00:00Z\n"
+            + "time_id=369; the_date=1997-01-03T08:00:00Z\n")
         .explainContains(
             "PLAN=EnumerableSortRel(sort0=[$0], dir0=[Ascending])\n"
             + "  EnumerableCalcRel(expr#0..9=[{inputs}], expr#10=[370], expr#11=[<($t0, $t10)], proj#0..1=[{exprs}], $condition=[$t11])\n"
